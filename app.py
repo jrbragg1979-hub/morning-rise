@@ -112,23 +112,29 @@ def force_generate():
     })
 
 
-# Schedule pre-generation 10 minutes before alarm
-alarm_time = os.getenv("ALARM_TIME", "06:50")
-hour, minute = map(int, alarm_time.split(":"))
+def start_scheduler():
+    """Start the daily briefing scheduler."""
+    try:
+        alarm_time = os.getenv("ALARM_TIME", "06:50")
+        hour, minute = map(int, alarm_time.split(":"))
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(
+            pre_generate_briefing,
+            "cron",
+            hour=hour,
+            minute=minute,
+            id="daily_briefing",
+        )
+        scheduler.start()
+        print(f"Daily briefing scheduled for {alarm_time}")
+    except Exception as e:
+        print(f"Scheduler error: {e}")
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(
-    pre_generate_briefing,
-    "cron",
-    hour=hour,
-    minute=minute,
-    id="daily_briefing",
-)
-scheduler.start()
+
+start_scheduler()
 
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 3003))
     print(f"Morning Rise server starting on port {port}")
-    print(f"Daily briefing scheduled for {alarm_time}")
     app.run(host="0.0.0.0", port=port, debug=True)
