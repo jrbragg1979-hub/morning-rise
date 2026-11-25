@@ -9,6 +9,8 @@ from openai import OpenAI
 from quotes import get_daily_quote
 from weather import get_weather, format_weather
 from calendar_integration import get_todays_events, format_calendar
+from localtime import local_now, local_today
+from warriors import get_todays_game, format_game
 
 
 AUDIO_DIR = Path("audio")
@@ -18,7 +20,7 @@ AUDIO_DIR.mkdir(exist_ok=True)
 def compose_briefing(recipient_name=None):
     """Build the full spoken briefing text."""
     name = recipient_name or os.getenv("RECIPIENT_NAME", "there")
-    now = datetime.datetime.now()
+    now = local_now()
     day_of_week = now.strftime("%A")
     date_str = now.strftime("%B %-d")
 
@@ -32,6 +34,9 @@ def compose_briefing(recipient_name=None):
         time_of_day = "evening"
 
     greeting = f"Good {time_of_day}, {name}. It's {day_of_week}, {date_str}."
+
+    # Warriors game day
+    game_section = format_game(get_todays_game())
 
     # Inspirational quote
     quote = get_daily_quote()
@@ -53,7 +58,10 @@ def compose_briefing(recipient_name=None):
     closing = f"Have a wonderful {day_of_week}, {name}. You've got this."
 
     # Assemble — leading pause prevents iOS audio cutoff
-    sections = ["...", greeting, quote_section]
+    sections = ["...", greeting]
+    if game_section:
+        sections.append(game_section)
+    sections.append(quote_section)
     if weather_section:
         sections.append(weather_section)
     sections.append(calendar_section)
@@ -70,7 +78,7 @@ def generate_audio(text, voice="nova"):
     """
     client = OpenAI()
 
-    today_str = datetime.date.today().isoformat()
+    today_str = local_today().isoformat()
     output_path = AUDIO_DIR / f"briefing_{today_str}.mp3"
 
     # Skip regeneration if today's audio already exists
