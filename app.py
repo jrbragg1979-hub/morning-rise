@@ -13,6 +13,8 @@ from flask import Flask, send_file, jsonify, Response
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from localtime import local_now, local_today, local_tz_name
+
 load_dotenv()
 
 from briefing import create_todays_briefing, AUDIO_DIR
@@ -23,7 +25,7 @@ app.secret_key = os.getenv("SECRET_KEY", "dev-secret")
 
 def pre_generate_briefing():
     """Called by scheduler to generate audio before alarm time."""
-    print(f"[{datetime.datetime.now()}] Pre-generating today's briefing...")
+    print(f"[{local_now()}] Pre-generating today's briefing...")
     try:
         create_todays_briefing()
         print("Briefing generated successfully.")
@@ -47,7 +49,7 @@ def index():
 @app.route("/today.mp3")
 def today_audio():
     """Serve today's briefing as MP3. Generate on-demand if not cached."""
-    today_str = datetime.date.today().isoformat()
+    today_str = local_today().isoformat()
     audio_path = AUDIO_DIR / f"briefing_{today_str}.mp3"
 
     if not audio_path.exists():
@@ -75,7 +77,7 @@ def today_text():
 @app.route("/today/duration")
 def today_duration():
     """Return the duration of today's MP3 in seconds."""
-    today_str = datetime.date.today().isoformat()
+    today_str = local_today().isoformat()
     audio_path = AUDIO_DIR / f"briefing_{today_str}.mp3"
 
     if not audio_path.exists():
@@ -98,7 +100,7 @@ def today_duration():
 @app.route("/generate")
 def force_generate():
     """Force regenerate today's briefing (deletes cached version)."""
-    today_str = datetime.date.today().isoformat()
+    today_str = local_today().isoformat()
     audio_path = AUDIO_DIR / f"briefing_{today_str}.mp3"
 
     if audio_path.exists():
@@ -117,7 +119,7 @@ def start_scheduler():
     try:
         alarm_time = os.getenv("ALARM_TIME", "06:50")
         hour, minute = map(int, alarm_time.split(":"))
-        scheduler = BackgroundScheduler()
+        scheduler = BackgroundScheduler(timezone=local_tz_name())
         scheduler.add_job(
             pre_generate_briefing,
             "cron",
@@ -126,7 +128,7 @@ def start_scheduler():
             id="daily_briefing",
         )
         scheduler.start()
-        print(f"Daily briefing scheduled for {alarm_time}")
+        print(f"Daily briefing scheduled for {alarm_time} {local_tz_name()}")
     except Exception as e:
         print(f"Scheduler error: {e}")
 

@@ -5,6 +5,8 @@ import datetime
 
 import caldav
 
+from localtime import local_now
+
 
 def get_todays_events():
     """Fetch today's events from iCloud Calendar."""
@@ -24,7 +26,7 @@ def get_todays_events():
         principal = client.principal()
         calendars = principal.calendars()
 
-        now = datetime.datetime.now()
+        now = local_now()
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=0)
 

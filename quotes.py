@@ -4,9 +4,9 @@ Inspirational quotes — fetches from API Ninjas with curated fallback.
 
 import os
 import random
-from datetime import date
-
 import requests
+
+from localtime import local_today
 
 
 # Fallback quotes if API is unavailable
@@ -52,6 +52,5 @@ def get_daily_quote():
         return quote
 
     # Fallback: deterministic daily rotation
-    today = date.today()
-    idx = today.toordinal() % len(FALLBACK_QUOTES)
+    idx = local_today().toordinal() % len(FALLBACK_QUOTES)
     return FALLBACK_QUOTES[idx]
